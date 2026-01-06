@@ -54,13 +54,13 @@ This project is useful for:
 curl -fsSL https://ollama.com/install.sh | sh
 Pull the required model:
 ollama pull llama3.2-vision
-### 2. Install Python Dependencies
+Install Python Dependencies
 pip install pydantic==2.10.1 chainlit ollama
-### 3. Run the Application
+Run the Application
 From the project directory:
 chainlit run app.py -w
 Once started, open the provided local URL in your browser to access the chat interface.
 
-##License
+License
 
 This project is licensed under the MIT License.
