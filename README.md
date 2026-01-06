@@ -12,21 +12,9 @@ The app runs entirely on your machine with no external API calls.
 
 
 
-\## Attribution
 
 
 
-This project is based on the MIT-licensed open-source project:
-
-https://github.com/ChawlaAvi/ai-engineering-hub/tree/main/local-chatgpt
-
-
-
-I studied the original implementation and extended it with additional features and improvements.
-
-
-
----
 
 
 
