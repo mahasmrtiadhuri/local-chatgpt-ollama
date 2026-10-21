@@ -1,66 +1,61 @@
-# Local ChatGPT (Fully Offline)
+# Local Chat with Ollama
 
-Local ChatGPT is a **100% offline ChatGPT-style application** built using **Chainlit** and **Ollama**, powered by the **Llama 3.2 Vision** model.  
-It allows you to chat with a large language model locally on your machine, without using any external APIs or cloud services.
+### A local multimodal chat interface with streaming responses.
 
-This project supports:
-- Text-based conversations
-- Image-based queries (vision model)
-- Streaming responses
-- Local session-based memory
+A compact Python application connecting a Chainlit interface to Ollama. It supports text and image input, retains recent conversation turns in session memory, and exposes generation settings through environment variables.
 
----
+## How it works
 
-## What This Project Does
+1. Chainlit receives a message and optional image attachments.
+2. The application adds them to the session conversation.
+3. Ollama generates a response using the configured local model.
+4. Tokens stream into the interface; conversation history is trimmed to a bounded number of messages.
 
-- Runs an AI chat assistant **entirely on your local system**
-- Uses **Ollama** to run open-source LLMs locally
-- Uses **Chainlit** to provide a clean ChatGPT-like web UI
-- Streams responses in real time
-- Maintains conversation context across messages
-- Supports multimodal input (text + images)
+Inference runs locally when Ollama is configured locally. Installing dependencies and downloading model weights require network access. Session history is in memory rather than a persistent conversation database.
 
-This project is useful for:
-- Learning how local LLM applications work
-- Experimenting with open-source models
-- Building privacy-friendly AI tools
-- Understanding chat memory and streaming responses
+## Quick start
 
----
-
-## How It Works (High Level)
-
-1. The user interacts with a web-based chat UI powered by Chainlit
-2. Messages (and images, if provided) are stored in session memory
-3. The conversation history is sent to a local LLM via Ollama
-4. The model generates responses, which are streamed back to the UI
-5. Conversation history is trimmed to avoid unlimited context growth
-
----
-
-## Requirements
-
-- Python **3.11 or later**
-- Ollama installed locally
-- A machine capable of running Llama 3.2 Vision
-
----
-
-## Installation & Setup
-
-### 1. Install Ollama
+Prerequisites: Python 3.11+, [Ollama](https://ollama.com/), and hardware with enough memory for the selected model.
 
 ```bash
-curl -fsSL https://ollama.com/install.sh | sh
-Pull the required model:
+git clone https://github.com/mahasmrtiadhuri/local-chatgpt-ollama.git
+cd local-chatgpt-ollama
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install pydantic==2.10.1 chainlit ollama
 ollama pull llama3.2-vision
-Install Python Dependencies
-pip install pydantic==2.10.1 chainlit ollama
-Run the Application
-From the project directory:
 chainlit run app.py -w
-Once started, open the provided local URL in your browser to access the chat interface.
+```
 
-License
+Ensure the Ollama service is running, then open the local URL printed by Chainlit. Model download size and inference speed depend on the selected model and hardware.
 
-This project is licensed under the MIT License.
+## Configuration
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `OLLAMA_MODEL` | `llama3.2-vision` | Local model name |
+| `SYSTEM_PROMPT` | `You are a helpful assistant.` | Initial system message |
+| `MAX_TURNS` | `12` | Recent user/assistant turns retained |
+| `TEMPERATURE` | `0.2` | Sampling temperature |
+| `TOP_P` | `0.9` | Nucleus sampling setting |
+| `NUM_PREDICT` | `512` | Generation token limit |
+
+Example:
+
+```bash
+OLLAMA_MODEL=llama3.2-vision MAX_TURNS=6 chainlit run app.py -w
+```
+
+## Code map
+
+| Function in `app.py` | Responsibility |
+|---|---|
+| `ensure_session` | Initialize conversation state |
+| `trim_interaction` | Preserve the system message and recent history |
+| `stream_from_ollama` | Forward generated tokens to the interface |
+| `start_chat` | Initialize the chat interface |
+| `main` | Handle messages and image attachments |
+
+## Scope and limitations
+
+History is bounded by message count, not token count. The current inference loop uses the synchronous Ollama client inside an async handler; concurrent sessions may block during generation. Dependency versions are not fully locked. A useful next iteration is an asynchronous model adapter with tests for streaming response formats and failure handling.
