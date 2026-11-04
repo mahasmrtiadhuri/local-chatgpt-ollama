@@ -12,7 +12,7 @@ from .model import TinyTransformer
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="NOVA continual-learning experiments")
-    parser.add_argument("command", choices=["experiment", "query"])
+    parser.add_argument("command", choices=["experiment", "query", "sweep"])
     parser.add_argument("--output", default="runs/default", help="Results directory")
     parser.add_argument("--steps", type=int, default=150, help="Optimizer steps per task")
     parser.add_argument("--tasks", type=int, default=3)
@@ -28,13 +28,14 @@ def main() -> None:
     parser.add_argument("--consolidation-strength", type=float, default=2.0)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--device", default="cpu", choices=["cpu", "cuda", "mps"])
+    parser.add_argument("--seeds", default="7,19,42", help="Comma-separated seeds for the sweep command")
     parser.add_argument("--method", choices=["finetune", "replay", "nova"], default="nova")
     parser.add_argument("--task-id", type=int, default=0)
     parser.add_argument("--entity-id", type=int, default=0)
     args = parser.parse_args()
 
     output_dir = Path(args.output)
-    if args.command == "experiment":
+    if args.command in {"experiment", "sweep"}:
         cfg = ExperimentConfig(
             tasks=args.tasks, entities=args.entities, values=args.values,
             steps=args.steps, batch_size=args.batch_size,
@@ -44,6 +45,21 @@ def main() -> None:
             consolidation_strength=args.consolidation_strength,
             seed=args.seed, device=args.device,
         )
+        if args.command == "sweep":
+            from .sweep import run_sweep
+
+            try:
+                seeds = [int(value.strip()) for value in args.seeds.split(",")]
+            except ValueError:
+                parser.error("--seeds must contain comma-separated integers")
+            if len(seeds) < 2 or len(set(seeds)) != len(seeds):
+                parser.error("--seeds needs at least two distinct values")
+            report = run_sweep(cfg, seeds, output_dir)
+            for method, metrics in report["summary"].items():
+                print(f"{method:9} accuracy={metrics['final_accuracy_mean']:.3f} "
+                      f"±{metrics['final_accuracy_std']:.3f}")
+            print(f"Wrote {output_dir / 'summary.json'}")
+            return
         data = run_experiment(cfg, output_dir)
         print(f"Parameters per model: {data['results']['nova']['parameter_count']:,}")
         for method, result in data["results"].items():
