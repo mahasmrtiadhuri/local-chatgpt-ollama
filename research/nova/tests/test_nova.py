@@ -81,3 +81,21 @@ def test_experiment_writes_metrics_and_checkpoints(tmp_path):
     assert (tmp_path / "nova.pt").is_file()
     checkpoint = torch.load(tmp_path / "nova.pt", weights_only=True)
     assert "state_dict" in checkpoint
+
+
+def test_sweep_outputs_paired_seed_metrics(tmp_path):
+    from nova.sweep import run_sweep
+
+    cfg = ExperimentConfig(
+        tasks=2, entities=6, values=3, steps=2, batch_size=4,
+        d_model=32, layers=1, heads=4,
+    )
+    report = run_sweep(cfg, [3, 11], tmp_path)
+    assert report["seeds"] == [3, 11]
+    assert set(report["summary"]) == {"finetune", "replay", "nova"}
+    assert "nova_minus_replay" in report["paired_accuracy_differences"]
+    assert (tmp_path / "seed_3" / "metrics.json").exists()
+    assert not (tmp_path / "seed_3" / "nova.pt").exists()
+    assert (tmp_path / "summary.json").exists()
+    with pytest.raises(ValueError):
+        run_sweep(cfg, [3, 3], tmp_path)
