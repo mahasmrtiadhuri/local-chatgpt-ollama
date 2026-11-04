@@ -45,7 +45,18 @@ All three methods start from the same seeded random initialization and use the s
 
 After each task, the script records accuracy on **every** task, including tasks not yet trained (those are diagnostic only). `final_mean_accuracy` is the mean accuracy after the last task. `mean_forgetting` averages, for every earlier task, its best accuracy since being learned minus its final accuracy.
 
-Try a few seeds and model sizes:
+For a paired **multi-seed benchmark**, use `sweep`. This writes a `summary.json`
+with mean and standard deviation across runs, plus the per-seed metrics:
+
+```bash
+python -m nova sweep --seeds 7,19,42 --steps 65 --output runs/sweep
+```
+
+A sweep avoids judging a method from a single favorable random seed. However,
+three seeds are still too few for strong statistical claims. The experiment
+reports descriptive variation rather than significance tests.
+
+Try individual seeds and model sizes:
 
 ```bash
 python -m nova experiment --seed 7 --steps 150 --output runs/seed7
@@ -64,6 +75,7 @@ nova/
   model.py        Small decoder-only Transformer
   learning.py     Fine-tuning, replay, priority updates, EWC
   experiment.py   Seeded experiment runner and JSON metrics
+  sweep.py        Paired multi-seed benchmark summary
   __main__.py     python -m nova entry point
 tests/
   test_nova.py    Core regression and integration tests
